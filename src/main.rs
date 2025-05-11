@@ -21,16 +21,11 @@ pub struct AudioFile {
 
 impl std::fmt::Display for Difficulty {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if &Difficulty::Potato == self {
-            write!(f, "Potato (MP3 64kb/s)")
-        } else if &Difficulty::Easy == self {
-            write!(f, "Easy (MP3 128kb/s)")
-        } else if &Difficulty::Medium == self {
-            write!(f, "Medium (Opus 128kb/s)")
-        } else if &Difficulty::Hard == self {
-            write!(f, "Hard (AAC 256kb/s)")
-        } else {
-            Err(std::fmt::Error)
+        match self {
+            Difficulty::Potato => write!(f, "Potato (MP3 64kb/s)"),
+            Difficulty::Easy => write!(f, "Easy (MP3 128kb/s)"),
+            Difficulty::Medium => write!(f, "Medium (Opus 128kb/s)"),
+            Difficulty::Hard => write!(f, "Hard (AAC 256kb/s)"),
         }
     }
 }

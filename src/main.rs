@@ -1,10 +1,10 @@
 mod cmd;
 
 use cmd::*;
+use core::f32;
 use inquire::{InquireError, Select};
 use open::that;
-use rand::Rng;
-use std::{fs::DirEntry, path::PathBuf};
+use std::path::PathBuf;
 
 #[derive(PartialEq)]
 enum Difficulty {
@@ -15,8 +15,8 @@ enum Difficulty {
 }
 
 pub struct AudioFile {
-    pub lossy: String,
-    pub lossless: String,
+    pub file: String,
+    pub lossless: bool,
 }
 
 impl std::fmt::Display for Difficulty {
@@ -56,30 +56,21 @@ fn guess(lossless: bool) -> bool {
     }
 }
 
-fn open_all(files: &Vec<AudioFile>) {
-    let mut win: u32 = 0;
-    let mut loss: u32 = 0;
-    let mut rng = rand::thread_rng();
+fn open_all(files: &Vec<AudioFile>) -> (f32, f32) {
+    let mut win: f32 = 0.0;
+    let mut loss: f32 = 0.0;
     for file in files {
-        let num = rng.random_range(0..1);
-        if num == 0 {
-            println!("Opening {}...", file.lossy);
-            that(&file.lossy).unwrap();
-            if guess(false) {
-                win += 1;
-            } else {
-                loss += 1;
-            }
+        that(&file.file).unwrap();
+        let guess = guess(file.lossless);
+        if guess {
+            win += 1.0;
+            println!("You guessed right!");
         } else {
-            println!("Opening {}...", file.lossless);
-            that(&file.lossless).unwrap();
-            if guess(true) {
-                win += 1;
-            } else {
-                loss += 1;
-            }
+            loss += 1.0;
+            println!("You guessed wrong!");
         }
     }
+    (win, loss)
 }
 
 fn main() {
@@ -115,5 +106,22 @@ fn main() {
             file.path()
         })
         .collect::<Vec<_>>();
+    if flac_files.is_empty() {
+        eprintln!("No FLAC file found in directory!");
+        std::process::exit(1);
+    }
     let files = convert(flac_files, difficulty);
+    let (wins, loss) = open_all(&files);
+    files.iter().for_each(|file| {
+        std::fs::remove_file(&file.file).ok();
+    });
+    let ratio = if loss == 0.0 {
+        100.0
+    } else {
+        (100.0 * wins) / loss
+    };
+    println!(
+        "All FLAC files blind tested! Accuracy: {}% ({}x right, {}x false)",
+        ratio, wins, loss
+    );
 }
